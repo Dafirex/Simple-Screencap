@@ -1,28 +1,20 @@
-import java.awt.Rectangle; 
-import java.awt.Robot;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-
-import java.awt.Toolkit;
-import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.awt.SystemTray;
 import java.awt.AWTException;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.MenuItem;
 import java.awt.MouseInfo;
 import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
+import javax.swing.JFrame;
+
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 import org.jnativehook.keyboard.NativeKeyEvent;
@@ -30,12 +22,19 @@ import org.jnativehook.keyboard.NativeKeyListener;
 import org.jnativehook.mouse.NativeMouseEvent;
 import org.jnativehook.mouse.NativeMouseListener;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+
 
 public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 	private enum State{
 		WAITING, CAPTURING, UPLOADING
 	};
 	
+	final private static String accessKey = "[ACCESSKEY HERE]";
+	final private static String secretKey = "[SECRETKEY HERE]";
+	final private static String bucketName = "[BUCKETNAME HERE]";
+	final private static String domainName = "[DOMAINNAME HERE]";
+
 	private static State currentState;
 	private static int x1 = 0;
 	private static int y1 = 0;
@@ -64,13 +63,16 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 		
 		ScreenCapMain main = new ScreenCapMain();
 		
+		BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+		
 		//Global Key Listener
 		GlobalScreen.addNativeKeyListener(main);
 		GlobalScreen.addNativeMouseListener(main);
+		
 		//Disable Logging
 		LogManager.getLogManager().reset();
 		Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
-		logger.setLevel(Level.WARNING);
+		logger.setLevel(Level.OFF);
 
 
 		//Creates System Tray Icons
@@ -108,6 +110,7 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
         selection.setBackground(new Color(.5f, .5f, .5f, .3f));
         selection.setAlwaysOnTop(true);
         selection.setVisible(false);
+        
         
         
 		while(running){
@@ -159,7 +162,7 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 					originY = Math.min(y1, y2);
 					endY = Math.max(y1, y2);
 					
-					Uploader imageUpload = new Uploader(originX, originY, endX, endY);
+					Uploader imageUpload = new Uploader(originX, originY, endX, endY, credentials, bucketName, domainName);
 					imageUpload.upload();
 					currentState = State.WAITING;
 
