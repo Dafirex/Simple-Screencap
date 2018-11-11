@@ -5,4 +5,4 @@ Ctrl + Shift + A to start screencap
 
 Runs in system tray
 
-Currently outputs to the resources folder, plans to add S3 bucket uploading.
+Put AWS and domain info in ScreenCapMain.
