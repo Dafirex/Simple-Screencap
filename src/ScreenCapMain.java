@@ -7,6 +7,7 @@ import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
+import java.awt.TrayIcon.MessageType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
@@ -64,7 +65,7 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 		ScreenCapMain main = new ScreenCapMain();
 		
 		BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-		
+		Uploader imageUpload = new Uploader(credentials, bucketName, domainName);
 		//Global Key Listener
 		GlobalScreen.addNativeKeyListener(main);
 		GlobalScreen.addNativeMouseListener(main);
@@ -98,7 +99,6 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 	    }catch(AWTException awtException){
 	        awtException.printStackTrace();
 	    }
-
 	    
 	    //JFrame for rectangle selection visual
 	    JFrame selection = new JFrame("Selection");
@@ -161,11 +161,9 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 					endX = Math.max(x1, x2);
 					originY = Math.min(y1, y2);
 					endY = Math.max(y1, y2);
-					
-					Uploader imageUpload = new Uploader(originX, originY, endX, endY, credentials, bucketName, domainName);
-					imageUpload.upload();
+					imageUpload.uploadImage(originX, originY, endX, endY);
 					currentState = State.WAITING;
-
+					trayIcon.displayMessage("Screencap Success", imageUpload.getLink(), MessageType.INFO);
 					break;
 				default:
 					break;

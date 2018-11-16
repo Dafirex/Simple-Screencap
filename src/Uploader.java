@@ -26,52 +26,56 @@ public class Uploader {
 	private AmazonS3 s3;
 	private String bucketName;
 	private String domainName;
-	private int x1;
-	private int y1;
-	private int x2;
-	private int y2;
+	private String fileName;
+	private Robot robot;
+	private Toolkit toolkit;
+	private Clipboard clipboard;
 	
-	public Uploader(int x1, int y1, int x2, int y2, BasicAWSCredentials cred, String bucket, String domain){
-		this.x1 = x1;
-		this.y1 = y1;
-		this.x2 = x2;
-		this.y2 = y2;
+	public Uploader(BasicAWSCredentials cred, String bucket, String domain){
+
 		s3 = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(cred)).build();
 		bucketName = bucket;
 		domainName = domain;
+		fileName = "";
+		try{
+			robot = new Robot();
+		}
+		catch(AWTException ex){
+			System.err.println(ex);
+		}
+		toolkit = Toolkit.getDefaultToolkit();
+		clipboard = toolkit.getSystemClipboard();
 	}
 	
-	public void upload(){	
+	public void uploadImage(int x1, int y1, int x2, int y2){	
 		//Height and Width must be > 0
 
 		if(x2-x1 <= 0|| y2-y1 <= 0){
 			System.out.println("Invalid Area Size");
 			return;
 		}
-		String fileName;
-		fileName = generateName();
+		fileName = generateName(x1, y1, x2, y2);
 		Rectangle screenRect = new Rectangle(x1, y1, x2 - x1, y2 - y1);
 		try{
-	    	Robot robot = new Robot();
 	    	BufferedImage screenFullImage = robot.createScreenCapture(screenRect);
 	    	File file = new File(fileName);
 	        ImageIO.write(screenFullImage, "png", file);
 			s3.putObject(bucketName, fileName, file);
 			s3.setObjectAcl(bucketName, fileName, CannedAccessControlList.PublicRead);
 			file.delete();
+			screenFullImage.flush();
 			
 	    }
-	    catch(AWTException | IOException ex){
+	    catch(IOException ex){
 	    	System.err.println(ex);
 	    }
 
-		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		Clipboard clipboard = toolkit.getSystemClipboard();
 		StringSelection strSel = new StringSelection(domainName + "/" + fileName);
 		clipboard.setContents(strSel, null);
+		strSel = null;
 	}
 	
-	private String generateName(){
+	private String generateName(int x1, int y1, int x2, int y2){
 		String fileName = "";
 		String upperCase = "BCDEFGHIJKLMNPQRSTVWXYZ";
 		String lowerCase = upperCase.toLowerCase();
@@ -115,4 +119,9 @@ public class Uploader {
 		fileName += ".png";
 		return fileName;
 	}
+	
+	public String getLink(){
+		return domainName + "/" + fileName;
+	}
+	
 }
