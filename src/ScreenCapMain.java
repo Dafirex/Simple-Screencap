@@ -42,9 +42,13 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 	private static int x2 = 0;
 	private static int y2 = 0;
 	
+	private static int imgScale = 1;
+	
 	private static boolean comboKey = false;
 	private static boolean comboKey2 = false;
 
+	private static TrayIcon trayIcon;
+	
 	public static void main(String[] args) {
 		boolean running = true;
 		currentState = State.WAITING;
@@ -91,7 +95,7 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 		
 		close.addActionListener(exitListen);
 		trayPopup.add(close);
-	    TrayIcon trayIcon = new TrayIcon(image, "Dafirex's Screencap Tool", trayPopup);
+	    trayIcon = new TrayIcon(image, "Dafirex's Screencap Tool", trayPopup);
 	    trayIcon.setImageAutoSize(true);
 
 	    try{
@@ -161,9 +165,12 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 					endX = Math.max(x1, x2);
 					originY = Math.min(y1, y2);
 					endY = Math.max(y1, y2);
-					imageUpload.uploadImage(originX, originY, endX, endY);
+					imageUpload.uploadImage(originX, originY, endX, endY, imgScale);
 					currentState = State.WAITING;
 					trayIcon.displayMessage("Screencap Success", imageUpload.getLink(), MessageType.INFO);
+					System.out.println("Screencap Success");
+					imgScale = 1;
+					System.gc();
 					break;
 				default:
 					break;
@@ -193,7 +200,15 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 		if(e.getKeyCode() == NativeKeyEvent.VC_ESCAPE && currentState == State.CAPTURING){
 			currentState = State.WAITING;
 			System.out.println("Capture Canceled");
+			imgScale = 1;
 		}
+		
+		//Numbers 1 to 4 for scaling up to 4x
+		if(currentState == State.CAPTURING &&( NativeKeyEvent.VC_1 - 1 <= e.getKeyCode() && e.getKeyCode() <= NativeKeyEvent.VC_5 - 1)){
+			imgScale = e.getKeyCode() - 1;
+			trayIcon.displayMessage("Screencap Scaling", e.getKeyCode() - 1 + "x", MessageType.INFO);
+		}
+		
 	}
 
 	@Override
@@ -222,6 +237,7 @@ public class ScreenCapMain implements NativeKeyListener, NativeMouseListener{
 				}
 				else{
 					currentState = State.WAITING;
+					imgScale = 1;
 				}
 				break;
 			default:
