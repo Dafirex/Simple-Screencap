@@ -1,4 +1,5 @@
 import java.awt.AWTException;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
@@ -30,6 +31,7 @@ public class Uploader {
 	private Robot robot;
 	private Toolkit toolkit;
 	private Clipboard clipboard;
+	private Graphics2D rescaler;
 	
 	public Uploader(BasicAWSCredentials cred, String bucket, String domain){
 
@@ -47,7 +49,7 @@ public class Uploader {
 		clipboard = toolkit.getSystemClipboard();
 	}
 	
-	public void uploadImage(int x1, int y1, int x2, int y2){	
+	public void uploadImage(int x1, int y1, int x2, int y2, int imgScale){	
 		//Height and Width must be > 0
 
 		if(x2-x1 <= 0|| y2-y1 <= 0){
@@ -58,11 +60,18 @@ public class Uploader {
 		Rectangle screenRect = new Rectangle(x1, y1, x2 - x1, y2 - y1);
 		try{
 	    	BufferedImage screenFullImage = robot.createScreenCapture(screenRect);
+	    	int width = (int) screenRect.getWidth();
+	    	int height = (int) screenRect.getHeight();
+	    	BufferedImage resizedImage = new BufferedImage(width * imgScale, height * imgScale, screenFullImage.getType());
 	    	File file = new File(fileName);
-	        ImageIO.write(screenFullImage, "png", file);
+	        rescaler = resizedImage.createGraphics();
+	        rescaler.drawImage(screenFullImage, 0, 0, width * imgScale, height * imgScale, null);
+	        rescaler.dispose();
+	        ImageIO.write(resizedImage, "png", file);
 			s3.putObject(bucketName, fileName, file);
 			s3.setObjectAcl(bucketName, fileName, CannedAccessControlList.PublicRead);
 			file.delete();
+			resizedImage.flush();
 			screenFullImage.flush();
 			
 	    }
